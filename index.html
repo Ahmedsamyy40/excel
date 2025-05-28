@@ -381,7 +381,7 @@ a:hover {
   async function fetchExcelFile() {
     try {
       // نجيب ملف الإكسل من مجلد المشروع
-      const response = await fetch('1.xlsx');
+      const response = await fetch('../1.xlsx');
       const arrayBuffer = await response.arrayBuffer();
 
       // نقرا الملف
