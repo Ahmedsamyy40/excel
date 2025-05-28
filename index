@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>عرض ملف Excel محلي</title>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+ <title></title>
+    <style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f9fafb;
+    padding: 20px;
+  }
+.search-wrapper {
+  position: sticky;
+  top: 20px;
+  z-index: 100;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+}
+
+/* عنصر داخلي لمربع البحث */
+.search-wrapper > div {
+  position: relative;
+}
+
+
+
+#searchInput {
+  width: 300px;
+  padding: 10px 40px 10px 15px; /* padding right ↑ عشان يسيب مساحة لـ ✖ */
+  border-radius: 25px;
+  border: 2px solid #a793dd;
+  font-size: 1rem;
+  transition: 0.3s;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #333;
+  opacity: 0.2;
+}
+
+#searchInput:hover,
+#searchInput:focus {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+#clearSearch {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #b61414;
+  transition: color 0.2s;
+}
+
+
+
+#clearSearch:hover {
+  color: rgb(0, 0, 0);
+}
+
+
+
+table#dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.05);
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+#dataTable thead tr {
+  background: linear-gradient(90deg, #586fda, #764ba2);    color: white;
+    text-align: center;
+    font-weight: 600;
+    user-select: none;
+}
+
+#dataTable th, #dataTable td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e1e8f0;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap; /* ✅ يمنع كسر النص */
+}
+
+
+#dataTable tbody tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+}
+
+#dataTable tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.filter-container {
+    display: none;
+    margin-top: 5px;
+}
+
+.filter-container.show {
+    display: block;
+}
+
+.column-filter {
+    width: 100%;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.styled-dropdown {
+    padding: 4px 8px;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    background: 
+        linear-gradient(white, white) padding-box,  /* خلفية العنصر */
+        linear-gradient(135deg, #8e2de2, #4a00e0) border-box; /* تدرج للبوردر */
+    cursor: pointer;
+    font-weight: bold; /* ← هنا */
+}
+
+
+
+a {
+    color: #2980b9;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.loading {
+    text-align: center;
+    font-size: 18px;
+    color: #7f8c8d;
+}
+
+.popup-content {
+    background: rgb(215, 188, 236);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    max-width: 300px;
+    margin: 40vh auto 0;
+    position: relative;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    color: #999;
+    user-select: none;
+}
+
+.close-btn:hover {
+    color: #e74c3c;
+}
+
+.call-btn, .whatsapp-btn {
+    margin: 10px 5px 0 5px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    color: white;
+}
+
+.call-btn {
+    background-color: #2f6fb8;
+}
+
+.call-btn:hover {
+    background-color: #092377;
+}
+
+.whatsapp-btn {
+    background-color: #3fda78;
+}
+
+.whatsapp-btn:hover {
+    background-color: #1da851;
+}
+
+
+
+#popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 9999;
+}
+
+.fade-in {
+    animation: fadeIn 0.3s forwards;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+ .call-type {
+    padding: 4px 30px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+  }
+
+.call-missed {
+  background-color: #e53e3e;
+}
+
+.call-received {
+  background-color: #38a169;
+}
+
+.call-outgoing {
+  background-color: #3182ce;
+}
+
+
+.filter-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.filter-container select {
+  width: 160px;
+  padding: 8px 12px;
+  border-radius: 30px;
+  border: 1px solid #cebcdf;
+  font-size: 14px;
+  appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5H7z' fill='%234a00e0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.filter-container select:focus {
+  background-color: #f9f6ff;
+  border: 1px solid #8e2de2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(142, 45, 226, 0.3);
+}
+
+
+
+@media (max-width: 600px) {
+  th, td {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+  }
+
+  .call-type {
+    padding: 3px 10px;
+    font-size: 0.7rem;
+  }
+
+  #searchInput {
+    font-size: 0.9rem;
+    padding: 8px 35px 8px 12px;
+  }
+
+  #clearSearch {
+    font-size: 1rem;
+    right: 10px;
+  }
+
+  .search-wrapper {
+    width: 100%;
+  }
+}
+
+  </style>
+
+  
+<style>
+/* دائرة اللودر */
+.loading {
+  border: 6px solid #c39bd3; /* لون البروز */
+  border-top: 6px solid #6f2da8; /* لون الجزء المتحرك */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto; /* توسيط */
+}
+
+/* حركة الدوران */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+  
+
+<script>
+    // منع الكليك يمين داخل الصفحة كلها
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+  </script>
+</head>
+<body>
+
+
+<div class="search-wrapper">
+  <input type="text" id="searchInput" placeholder="Search..." onkeyup="searchTable()">
+  <span id="clearSearch" onclick="clearSearch()">✖</span>
+</div>
+
+<script>
+  function clearSearch() {
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    document.getElementById("clearSearch").style.display = "none";
+    searchTable();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("searchInput");
+    const clearBtn = document.getElementById("clearSearch");
+
+    input.addEventListener("input", function () {
+      clearBtn.style.display = this.value ? "inline" : "none";
+      searchTable();
+    });
+
+    // إخفاء الإكس في البداية
+    clearBtn.style.display = "none";
+  });
+</script>
+
+      
+      
+
+      
+    <div id="table-container">
+
+</div>
+
+<script>
+  async function fetchExcelFile() {
+    try {
+      // نجيب ملف الإكسل من مجلد المشروع
+      const response = await fetch('1.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+
+      // نقرا الملف
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+      // ناخد اسم أول شيت
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      // نحول البيانات لمصفوفة
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      displayTable(data);
+    } catch (err) {
+      document.getElementById('table-container').innerText = 'حدث خطأ في تحميل الملف: ' + err.message;
+    }
+  }
+function displayTable(data) {
+  if (!data.length) {
+    document.getElementById('table-container').innerText = 'لا توجد بيانات في الملف';
+    return;
+  }
+
+  let html = '<table id="dataTable" class="display"><thead><tr>';
+
+  // أضف رأس عمود الترقيم
+  html += '<th>#</th>';
+
+  // أضف بقية رؤوس الأعمدة
+  data[0].forEach(header => {
+    html += `<th>${header}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // أضف الصفوف مع الترقيم التلقائي
+  data.slice(1).forEach((row, index) => {
+    html += '<tr>';
+    html += `<td>${index + 1}</td>`; // عمود الترقيم
+    row.forEach(cell => {
+      html += `<td>${cell !== undefined ? cell : ''}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+
+  // تفعيل DataTables (لو مش مفعل بالفعل)
+  if (window.jQuery && $.fn.DataTable) {
+    $('#dataTable').DataTable();
+  }
+}
+
+  fetchExcelFile();
+</script>
+       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
